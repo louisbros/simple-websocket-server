@@ -1,4 +1,4 @@
-package com.github.louisbros.server;
+package com.github.louisbros.websocket.server;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -16,24 +16,24 @@ import java.util.Iterator;
 import java.util.List;
 import net.iharder.Base64;
 
-public class SimpleWebsocketServer implements Runnable, Serializable{
+public class WebsocketServer implements Runnable, Serializable{
 
 	private static final long serialVersionUID = 1L;
-	private volatile static SimpleWebsocketServer server;
+	private volatile static WebsocketServer server;
 	private transient Thread thread;
 	private static final String MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	private List<Peer> peers;
 	
-	private SimpleWebsocketServer(){
+	private WebsocketServer(){
 		peers = new ArrayList<Peer>();
 	}
 	
-	public static SimpleWebsocketServer getInstance(){
+	public static WebsocketServer getInstance(){
 		
 		if(server == null){
-			synchronized(SimpleWebsocketServer.class){
+			synchronized(WebsocketServer.class){
 				if(server == null){
-					server = new SimpleWebsocketServer();
+					server = new WebsocketServer();
 					server.start();
 				}
 			}

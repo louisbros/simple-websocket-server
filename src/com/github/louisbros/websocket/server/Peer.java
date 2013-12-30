@@ -1,4 +1,4 @@
-package com.github.louisbros.server;
+package com.github.louisbros.websocket.server;
 
 import java.nio.channels.SocketChannel;
 
