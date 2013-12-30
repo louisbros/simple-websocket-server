@@ -21,7 +21,6 @@ public class WebsocketServer implements Runnable, Serializable{
 	private static final long serialVersionUID = 1L;
 	private volatile static WebsocketServer server;
 	private transient Thread thread;
-	private static final String MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	private List<Peer> peers;
 	
 	private WebsocketServer(){
@@ -90,27 +89,22 @@ public class WebsocketServer implements Runnable, Serializable{
 					if(selectionKey.isReadable() && selectionKey.attachment() instanceof Peer){
 						
 						Peer peer = (Peer)selectionKey.attachment();
-						StringBuilder sb = new StringBuilder();
+						ByteBuffer buffer = ByteBuffer.allocate(1024);
+						int read = peer.getChannel().read(buffer);
 						
-						if(readChannel(peer, sb)){
-
-							if(!peer.isHandshakeComplete()){
-								
-								String[] lines = sb.toString().split("\\n");
-								for(String line: lines){
-									String[] keyVal = line.split(":");
-									if(keyVal.length == 2 && keyVal[0].equals("Sec-WebSocket-Key")){
-										peer.setKey(keyVal[1].trim());
-									}
-								}
-							}
-							else{
-								System.out.println(sb.toString());
-							}
-						}
-						else{
+						if(read == -1){
 							peer.getChannel().close();
 							peers.remove(peer);
+							continue;
+						}
+
+						buffer.flip();
+						
+						if(!peer.isHandshakeComplete()){
+							peer.setHandshakeProperties(ProtocolUtils.readHandshake(buffer));
+						}
+						else{
+							System.out.println(ProtocolUtils.decodeMaskedFrame(buffer));
 						}
 						
 						selectionKey.interestOps(SelectionKey.OP_WRITE);
@@ -122,21 +116,15 @@ public class WebsocketServer implements Runnable, Serializable{
 						Peer peer = (Peer)selectionKey.attachment();
 						
 						if(!peer.isHandshakeComplete()){
-							
 							peer.setHandshakeComplete(true);
-							
-							String base64 = Base64.encodeBytes(MessageDigest.getInstance("SHA1").digest((peer.getKey()+MAGIC_STRING).getBytes()));
-				            String response =
-				            	"HTTP/1.1 101 Switching Protocols\r\n" +
-						        "Connection: Upgrade\r\n" +
-				            	"Sec-WebSocket-Accept: "+base64+"\r\n" +
-				            	"Upgrade: websocket\r\n" +
-				            	"\r\n"
-				            ;
-				            writeChannel(peer, response);
+							ProtocolUtils.writeHandshake(peer.getChannel(), peer.getHandshakeProperties().getProperty("Sec-WebSocket-Key"));
 						}
 						else{
-							writeChannel(peer, "Handshake Complete");
+							ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame("Handshake Complete");
+							buffer.flip();
+							while(buffer.hasRemaining()){
+								peer.getChannel().write(buffer);
+							}
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
@@ -164,83 +152,5 @@ public class WebsocketServer implements Runnable, Serializable{
 				e.printStackTrace();
 			}
 		}
-	}
-	
-	private boolean readChannel(Peer peer, StringBuilder sb) throws IOException{
-
-		ByteBuffer buf = ByteBuffer.allocate(1024);
-		int read = peer.getChannel().read(buf);
-		
-		buf.flip();
-		
-		List<Byte> frame = new ArrayList<Byte>(read);
-		for(int i = 0;i < read;i++){
-			byte b = buf.get(i);
-			frame.add(b);
-			sb.append((char)(b & 0xff));
-		}
-		
-		if(peer.isHandshakeComplete()){ // frame
-			sb.setLength(0);
-			sb.append(decodeFrame(frame));
-		}
-
-		return read != -1 ? true : false;
-	}
-	
-	private void writeChannel(Peer peer, String message) throws IOException{
-		
-		ByteBuffer buf = null;
-		
-		if(peer.isHandshakeComplete()){ // frame
-			
-			List<Byte> frame = encodeFrame(message);
-			buf = ByteBuffer.allocate(frame.size());
-			for(byte b : frame){
-				buf.put(b);
-			}
-		}
-		else{
-			buf = ByteBuffer.allocate(message.getBytes().length);
-			buf.put(message.getBytes());
-		}
-
-		buf.flip();
-		
-
-		while(buf.hasRemaining()) {
-			peer.getChannel().write(buf);
-		}
-	}
-	
-	// masked
-	private String decodeFrame(List<Byte> frame){
-
-		StringBuilder sb = new StringBuilder();
-		
-		Byte type = frame.remove(0); // don't really need this, only want to deal with text for now
-		Byte length = (byte)(frame.remove(0) & 127);
-		//TODO: detect whether the length is stored in 1, 2 or 8 bytes
-		List<Byte> masks = frame.subList(0, 4);
-		List<Byte> data = frame.subList(4, frame.size());
-		
-		for(int i = 0;i < length;i++){
-			sb.append((char)(data.get(i) ^ masks.get(i % masks.size())));
-		}
-		
-		return sb.toString();
-	}
-	
-	// unmasked
-	private List<Byte> encodeFrame(String message){
-		
-		List<Byte> frame = new ArrayList<Byte>();
-		frame.add((byte)Integer.parseInt("10000001", 2));
-		frame.add((byte)message.length());
-		for(int i = 0;i < message.length();i++){
-			frame.add((byte)message.charAt(i));
-		}
-
-		return frame;
 	}
 }

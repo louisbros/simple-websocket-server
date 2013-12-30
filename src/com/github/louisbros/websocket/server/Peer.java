@@ -1,22 +1,16 @@
 package com.github.louisbros.websocket.server;
 
 import java.nio.channels.SocketChannel;
+import java.util.Properties;
 
 public class Peer {
 	
 	private SocketChannel channel;
-	private String key;
 	private boolean handshakeComplete = false;
+	private Properties handshakeProperties;
 	
 	public Peer(SocketChannel channel){
 		this.channel = channel;
-	}
-	
-	public String getKey(){
-		return key;
-	}
-	public void setKey(String key){
-		this.key = key;
 	}
 	
 	public SocketChannel getChannel(){
@@ -31,5 +25,12 @@ public class Peer {
 	}
 	public void setHandshakeComplete(boolean handshakeComplete){
 		this.handshakeComplete = handshakeComplete;
+	}
+	
+	public Properties getHandshakeProperties(){
+		return handshakeProperties;
+	}
+	public void setHandshakeProperties(Properties handshakeProperties){
+		this.handshakeProperties = handshakeProperties;
 	}
 }
