@@ -1,6 +1,7 @@
 package com.github.louisbros.websocket.server;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
@@ -63,11 +64,24 @@ public class ProtocolUtils {
 		StringBuilder sb = new StringBuilder();
 		
 		Byte type = frame.remove(0); // don't really need this, only want to deal with text for now
-		Byte length = (byte)(frame.remove(0) & 127);
-		//TODO: detect whether the length is stored in 1, 2 or 8 bytes
+		int length = (int) frame.remove(0) & 127 & 0xff; // 7 bits
+		if(length == 126){ // 16 bits
+			length = (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+		}
+		if(length == 127){ // 64 bits
+			length = (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+			length += (int) frame.remove(0) & 0xff;
+		}
+		
 		List<Byte> masks = frame.subList(0, 4);
 		List<Byte> data = frame.subList(4, frame.size());
-		
 		for(int i = 0;i < length;i++){
 			sb.append((char)(data.get(i) ^ masks.get(i % masks.size())));
 		}
