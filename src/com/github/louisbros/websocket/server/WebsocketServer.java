@@ -9,12 +9,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import net.iharder.Base64;
 
 public class WebsocketServer implements Runnable, Serializable{
 
@@ -83,10 +81,8 @@ public class WebsocketServer implements Runnable, Serializable{
 						peers.add(peer);
 						
 						channel.register( selector, SelectionKey.OP_READ, peer);
-						continue;
 					}
-
-					if(selectionKey.isReadable() && selectionKey.attachment() instanceof Peer){
+					else if(selectionKey.isReadable() && selectionKey.attachment() instanceof Peer){
 						
 						Peer peer = (Peer)selectionKey.attachment();
 						ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -108,10 +104,8 @@ public class WebsocketServer implements Runnable, Serializable{
 						}
 						
 						selectionKey.interestOps(SelectionKey.OP_WRITE);
-						continue;
 					}
-					
-					if(selectionKey.isWritable() && selectionKey.attachment() instanceof Peer){
+					else if(selectionKey.isWritable() && selectionKey.attachment() instanceof Peer){
 
 						Peer peer = (Peer)selectionKey.attachment();
 						
@@ -128,7 +122,6 @@ public class WebsocketServer implements Runnable, Serializable{
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
-						continue;
 					}
 				}
 			}
