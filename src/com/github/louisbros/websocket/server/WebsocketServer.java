@@ -82,7 +82,9 @@ public class WebsocketServer implements Runnable, Serializable{
 						channel.configureBlocking( false );
 						Peer peer = new Peer(channel);
 						peers.add(peer);
+						
 						channel.register( selector, SelectionKey.OP_READ, peer);
+						continue;
 					}
 
 					if(selectionKey.isReadable() && selectionKey.attachment() instanceof Peer){
@@ -102,14 +104,17 @@ public class WebsocketServer implements Runnable, Serializable{
 									}
 								}
 							}
+							else{
+								System.out.println(sb.toString());
+							}
 						}
 						else{
 							peer.getChannel().close();
 							peers.remove(peer);
-							continue;
 						}
 						
 						selectionKey.interestOps(SelectionKey.OP_WRITE);
+						continue;
 					}
 					
 					if(selectionKey.isWritable() && selectionKey.attachment() instanceof Peer){
@@ -135,6 +140,7 @@ public class WebsocketServer implements Runnable, Serializable{
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
+						continue;
 					}
 				}
 			}
@@ -175,6 +181,7 @@ public class WebsocketServer implements Runnable, Serializable{
 		}
 		
 		if(peer.isHandshakeComplete()){ // frame
+			sb.setLength(0);
 			sb.append(decodeFrame(frame));
 		}
 
@@ -220,8 +227,6 @@ public class WebsocketServer implements Runnable, Serializable{
 		for(int i = 0;i < length;i++){
 			sb.append((char)(data.get(i) ^ masks.get(i % masks.size())));
 		}
-
-		encodeFrame(sb.toString());
 		
 		return sb.toString();
 	}
