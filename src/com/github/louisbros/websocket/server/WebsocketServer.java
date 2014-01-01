@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.github.louisbros.websocket.server.ProtocolUtils.Code;
+
 public class WebsocketServer implements Runnable, Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -86,21 +88,22 @@ public class WebsocketServer implements Runnable, Serializable{
 						
 						Peer peer = (Peer)selectionKey.attachment();
 						ByteBuffer buffer = ByteBuffer.allocate(1024);
-						int read = peer.getChannel().read(buffer);
-						
-						if(read == -1){
-							peer.getChannel().close();
-							peers.remove(peer);
-							continue;
-						}
-
+						peer.getChannel().read(buffer);
 						buffer.flip();
 						
 						if(!peer.isHandshakeComplete()){
 							peer.setHandshakeProperties(ProtocolUtils.readHandshake(buffer));
 						}
 						else{
-							System.out.println(ProtocolUtils.decodeMaskedFrame(buffer));
+							String message = ProtocolUtils.decodeMaskedFrame(buffer);
+							if(message.equals(Code.CLOSE.name())){
+								peer.getChannel().close();
+								peers.remove(peer);
+								continue;
+							}
+							else{
+								System.out.println(message);
+							}
 						}
 						
 						selectionKey.interestOps(SelectionKey.OP_WRITE);

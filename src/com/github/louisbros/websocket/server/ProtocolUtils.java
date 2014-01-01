@@ -16,6 +16,23 @@ public class ProtocolUtils {
 
 	private static final String WS_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	
+	enum Code {
+
+		TEXT_MESSAGE(1),
+		BINARY_MESSAEG(2),
+		CLOSE(8);
+		
+		private int code;
+		
+		Code(int code){
+			this.code = code;
+		}
+		
+		public int getCode(){
+			return code;
+		}
+	}
+	
 	public static Properties readHandshake(ByteBuffer buffer){
 		
 		Properties props = new Properties();
@@ -56,34 +73,44 @@ public class ProtocolUtils {
 	
 	public static String decodeMaskedFrame(ByteBuffer buffer){
 		
+		StringBuilder sb = new StringBuilder();
+		
 		List<Byte> frame = new ArrayList<Byte>();
 		while(buffer.hasRemaining()){
 			frame.add(buffer.get());
 		}
+		
+		Byte code = (byte)(frame.remove(0) & 127 & 0xff);
 
-		StringBuilder sb = new StringBuilder();
-		
-		Byte type = frame.remove(0); // don't really need this, only want to deal with text for now
-		int length = (int) frame.remove(0) & 127 & 0xff; // 7 bits
-		if(length == 126){ // 16 bits
-			length = (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
+		if(code == Code.TEXT_MESSAGE.getCode()){
+			
+			int length = (int) frame.remove(0) & 127 & 0xff; // 7 bits
+			if(length == 126){ // 16 bits
+				length = (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+			}
+			if(length == 127){ // 64 bits
+				length = (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+				length += (int) frame.remove(0) & 0xff;
+			}
+			
+			List<Byte> masks = frame.subList(0, 4);
+			List<Byte> data = frame.subList(4, frame.size());
+			for(int i = 0;i < length;i++){
+				sb.append((char)(data.get(i) ^ masks.get(i % masks.size())));
+			}
 		}
-		if(length == 127){ // 64 bits
-			length = (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
-			length += (int) frame.remove(0) & 0xff;
+		else if(code == Code.CLOSE.getCode()){
+			sb.append(Code.CLOSE.name());
 		}
-		
-		List<Byte> masks = frame.subList(0, 4);
-		List<Byte> data = frame.subList(4, frame.size());
-		for(int i = 0;i < length;i++){
-			sb.append((char)(data.get(i) ^ masks.get(i % masks.size())));
+		else{
+			// throw new unsupported code exception
 		}
 		
 		return sb.toString();
