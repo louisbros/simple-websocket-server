@@ -20,7 +20,6 @@ public class ProtocolUtils {
 	enum Code {
 
 		TEXT_MESSAGE(1),
-		BINARY_MESSAEG(2),
 		CLOSE(8);
 		
 		private int code;
@@ -111,7 +110,7 @@ public class ProtocolUtils {
 			sb.append(Code.CLOSE.name());
 		}
 		else{
-			throw new UnsupportedCodeException("Code: '"+code+"' is not supported.");
+			throw new UnsupportedCodeException("Websocket frame code: '"+code+"' is not supported.");
 		}
 		
 		return sb.toString();
