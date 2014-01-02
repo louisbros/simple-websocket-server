@@ -56,6 +56,17 @@ public class WebsocketServer implements Runnable, Serializable{
 		return port;
 	}
 	
+	public void broadcast(String message) throws IOException{
+		
+		for(Peer peer : peers){
+			ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame(message);
+			buffer.flip();
+			while(buffer.hasRemaining()){
+				peer.getChannel().write(buffer);
+			}
+		}
+	}
+	
 	//@Override
 	public void run() {
 		
@@ -69,6 +80,9 @@ public class WebsocketServer implements Runnable, Serializable{
 			ServerSocket socket = serverSocketChannel.socket();
 			socket.bind(new InetSocketAddress(0));
 			port = socket.getLocalPort();
+			
+			System.out.println(port);
+			
 			selector = Selector.open();
 			serverSocketChannel.register( selector, SelectionKey.OP_ACCEPT );
 			
@@ -100,6 +114,7 @@ public class WebsocketServer implements Runnable, Serializable{
 						
 						if(!peer.isHandshakeComplete()){
 							peer.setHandshakeProperties(ProtocolUtils.readHandshake(buffer));
+							selectionKey.interestOps(SelectionKey.OP_WRITE);
 						}
 						else{
 							String message = ProtocolUtils.decodeMaskedFrame(buffer);
@@ -109,11 +124,10 @@ public class WebsocketServer implements Runnable, Serializable{
 								continue;
 							}
 							else{
-								System.out.println(message);
+								// just broadcast any messages from clients
+								broadcast(message);
 							}
 						}
-						
-						selectionKey.interestOps(SelectionKey.OP_WRITE);
 					}
 					else if(selectionKey.isWritable() && selectionKey.attachment() instanceof Peer){
 
@@ -122,13 +136,6 @@ public class WebsocketServer implements Runnable, Serializable{
 						if(!peer.isHandshakeComplete()){
 							peer.setHandshakeComplete(true);
 							ProtocolUtils.writeHandshake(peer.getChannel(), peer.getHandshakeProperties().getProperty("Sec-WebSocket-Key"));
-						}
-						else{
-							ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame("Handshake Complete");
-							buffer.flip();
-							while(buffer.hasRemaining()){
-								peer.getChannel().write(buffer);
-							}
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
