@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.github.louisbros.websocket.exception.UnsupportedCodeException;
 import com.github.louisbros.websocket.server.ProtocolUtils.Code;
 
 public class WebsocketServer implements Runnable, Serializable{
@@ -133,6 +134,9 @@ public class WebsocketServer implements Runnable, Serializable{
 			e.printStackTrace();
 		}
 		catch(NoSuchAlgorithmException e){
+			e.printStackTrace();
+		}
+		catch(UnsupportedCodeException e){
 			e.printStackTrace();
 		}
 		finally{

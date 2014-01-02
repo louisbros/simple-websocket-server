@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import com.github.louisbros.websocket.exception.UnsupportedCodeException;
+
 import net.iharder.Base64;
 
 public class ProtocolUtils {
@@ -70,7 +72,7 @@ public class ProtocolUtils {
 		}
 	}
 	
-	public static String decodeMaskedFrame(ByteBuffer buffer){
+	public static String decodeMaskedFrame(ByteBuffer buffer) throws UnsupportedCodeException{
 		
 		StringBuilder sb = new StringBuilder();
 		
@@ -109,7 +111,7 @@ public class ProtocolUtils {
 			sb.append(Code.CLOSE.name());
 		}
 		else{
-			// throw new unsupported code exception
+			throw new UnsupportedCodeException("Code: '"+code+"' is not supported.");
 		}
 		
 		return sb.toString();
