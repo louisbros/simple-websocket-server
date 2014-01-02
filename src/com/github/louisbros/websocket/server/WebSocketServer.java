@@ -17,24 +17,24 @@ import java.util.List;
 import com.github.louisbros.websocket.exception.UnsupportedCodeException;
 import com.github.louisbros.websocket.server.ProtocolUtils.Code;
 
-public class WebsocketServer implements Runnable, Serializable{
+public class WebSocketServer implements Runnable, Serializable{
 
 	private static final long serialVersionUID = 1L;
-	private volatile static WebsocketServer server;
+	private volatile static WebSocketServer server;
 	private transient Thread thread;
 	private List<Peer> peers;
 	private int port = -1;
 	
-	private WebsocketServer(){
+	private WebSocketServer(){
 		peers = new ArrayList<Peer>();
 	}
 	
-	public static WebsocketServer getInstance(){
+	public static WebSocketServer getInstance(){
 		
 		if(server == null){
-			synchronized(WebsocketServer.class){
+			synchronized(WebSocketServer.class){
 				if(server == null){
-					server = new WebsocketServer();
+					server = new WebSocketServer();
 					server.start();
 				}
 			}
