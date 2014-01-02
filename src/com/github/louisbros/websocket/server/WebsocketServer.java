@@ -23,6 +23,7 @@ public class WebsocketServer implements Runnable, Serializable{
 	private volatile static WebsocketServer server;
 	private transient Thread thread;
 	private List<Peer> peers;
+	private int port = -1;
 	
 	private WebsocketServer(){
 		peers = new ArrayList<Peer>();
@@ -51,20 +52,25 @@ public class WebsocketServer implements Runnable, Serializable{
 		thread.interrupt();
 	}
 	
+	public int getPort(){
+		return port;
+	}
+	
 	//@Override
 	public void run() {
 		
-		ServerSocketChannel server = null;
+		ServerSocketChannel serverSocketChannel = null;
 		Selector selector = null;
 		
 		try{
 			
-			server = ServerSocketChannel.open();
-			server.configureBlocking( false );
-			ServerSocket socket = server.socket();
-			socket.bind(new InetSocketAddress("127.0.0.1", 8889));
+			serverSocketChannel = ServerSocketChannel.open();
+			serverSocketChannel.configureBlocking( false );
+			ServerSocket socket = serverSocketChannel.socket();
+			socket.bind(new InetSocketAddress(0));
+			port = socket.getLocalPort();
 			selector = Selector.open();
-			server.register( selector, SelectionKey.OP_ACCEPT );
+			serverSocketChannel.register( selector, SelectionKey.OP_ACCEPT );
 			
 			while(!thread.isInterrupted()){
 				
@@ -78,7 +84,7 @@ public class WebsocketServer implements Runnable, Serializable{
 					
 					if(selectionKey.isAcceptable()){
 						
-						SocketChannel channel = server.accept();
+						SocketChannel channel = serverSocketChannel.accept();
 						channel.configureBlocking( false );
 						Peer peer = new Peer(channel);
 						peers.add(peer);
@@ -141,8 +147,8 @@ public class WebsocketServer implements Runnable, Serializable{
 		}
 		finally{
 			try{
-				if(server != null ){
-					server.close();
+				if(serverSocketChannel != null ){
+					serverSocketChannel.close();
 				}
 				if(selector != null ){
 					selector.close();
