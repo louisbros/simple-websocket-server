@@ -1,10 +1,12 @@
 package com.github.louisbros.websocket.server;
 
+import java.io.Serializable;
 import java.nio.channels.SocketChannel;
 import java.util.Properties;
 
-public class Peer {
+public class Peer implements Serializable{
 	
+	private static final long serialVersionUID = 1L;
 	private SocketChannel channel;
 	private boolean handshakeComplete = false;
 	private Properties handshakeProperties;
