@@ -64,9 +64,14 @@ public class WebSocketServer implements Runnable, Serializable{
 	
 	public void broadcast(String message) throws IOException{
 		
+		Map<String, String > jsonMap = new HashMap<String, String>();
+		jsonMap.put("peerSize", Integer.toString(peers.size()));
+		jsonMap.put("message", message);
+		ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame(new JSONObject(jsonMap).toString());
+		buffer.flip();
+		
 		for(Peer peer : peers){
-			ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame(message);
-			buffer.flip();
+			buffer.rewind();
 			while(buffer.hasRemaining()){
 				peer.getChannel().write(buffer);
 			}
@@ -105,7 +110,6 @@ public class WebSocketServer implements Runnable, Serializable{
 						channel.configureBlocking( false );
 						Peer peer = new Peer(channel);
 						peers.add(peer);
-						
 						channel.register( selector, SelectionKey.OP_READ, peer);
 					}
 					else if(selectionKey.isReadable() && selectionKey.attachment() instanceof Peer){
@@ -124,13 +128,10 @@ public class WebSocketServer implements Runnable, Serializable{
 							if(message.equals(Code.CLOSE.name())){
 								peer.getChannel().close();
 								peers.remove(peer);
-								Map<String, String > jsonMap = new HashMap<String, String>();
-								jsonMap.put("peerSize", Integer.toString(peers.size()));
-								broadcast(new JSONObject(jsonMap).toString());
+								broadcast("peer disconnected");
 								continue;
 							}
 							else{
-								// just broadcast any messages from clients
 								broadcast(message);
 							}
 						}
@@ -142,10 +143,7 @@ public class WebSocketServer implements Runnable, Serializable{
 						if(!peer.isHandshakeComplete()){
 							peer.setHandshakeComplete(true);
 							ProtocolUtils.writeHandshake(peer.getChannel(), peer.getHandshakeProperties().getProperty("Sec-WebSocket-Key"));
-							// update clients with new status 
-							Map<String, String > jsonMap = new HashMap<String, String>();
-							jsonMap.put("peerSize", Integer.toString(peers.size()));
-							broadcast(new JSONObject(jsonMap).toString());
+							broadcast("peer connected");
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
