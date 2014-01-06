@@ -11,8 +11,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import org.json.JSONObject;
 
 import com.github.louisbros.websocket.exception.UnsupportedCodeException;
 import com.github.louisbros.websocket.server.ProtocolUtils.Code;
@@ -120,6 +124,9 @@ public class WebSocketServer implements Runnable, Serializable{
 							if(message.equals(Code.CLOSE.name())){
 								peer.getChannel().close();
 								peers.remove(peer);
+								Map<String, String > jsonMap = new HashMap<String, String>();
+								jsonMap.put("peerSize", Integer.toString(peers.size()));
+								broadcast(new JSONObject(jsonMap).toString());
 								continue;
 							}
 							else{
@@ -135,6 +142,10 @@ public class WebSocketServer implements Runnable, Serializable{
 						if(!peer.isHandshakeComplete()){
 							peer.setHandshakeComplete(true);
 							ProtocolUtils.writeHandshake(peer.getChannel(), peer.getHandshakeProperties().getProperty("Sec-WebSocket-Key"));
+							// update clients with new status 
+							Map<String, String > jsonMap = new HashMap<String, String>();
+							jsonMap.put("peerSize", Integer.toString(peers.size()));
+							broadcast(new JSONObject(jsonMap).toString());
 						}
 
 						selectionKey.interestOps(SelectionKey.OP_READ);
