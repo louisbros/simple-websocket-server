@@ -80,9 +80,6 @@ public class WebSocketServer implements Runnable, Serializable{
 			ServerSocket socket = serverSocketChannel.socket();
 			socket.bind(new InetSocketAddress(0));
 			port = socket.getLocalPort();
-			
-			System.out.println(port);
-			
 			selector = Selector.open();
 			serverSocketChannel.register( selector, SelectionKey.OP_ACCEPT );
 			
