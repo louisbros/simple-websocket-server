@@ -49,7 +49,9 @@ public class WebSocketServer implements Runnable, Serializable{
 	}
 	
 	public void stop(){
-		thread.interrupt();
+		if(thread != null){
+			thread.interrupt();
+		}
 	}
 	
 	public int getPort(){
