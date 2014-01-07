@@ -9,25 +9,6 @@ import org.json.JSONObject;
 
 public class WebSocketServerImpl extends AbstractWebSocketServer{
 
-	private static final long serialVersionUID = 1L;
-
-	private WebSocketServerImpl(){
-	}
-	
-	public static WebSocketServer getInstance(){
-		
-		if(server == null){
-			synchronized(WebSocketServerImpl.class){
-				if(server == null){
-					server = new WebSocketServerImpl();
-					server.start();
-				}
-			}
-		}
-		
-		return server;
-	}
-	
 	@Override
 	public void broadcast(String message) throws IOException{
 		

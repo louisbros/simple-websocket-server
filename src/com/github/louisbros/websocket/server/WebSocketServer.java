@@ -3,7 +3,7 @@ package com.github.louisbros.websocket.server;
 import java.io.IOException;
 import java.io.Serializable;
 
-public interface WebSocketServer extends Runnable, Serializable{
+public interface WebSocketServer extends Runnable{
 
 	void start();
 	void stop();

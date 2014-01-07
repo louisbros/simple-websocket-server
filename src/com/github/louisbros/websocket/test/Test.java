@@ -6,6 +6,7 @@ import com.github.louisbros.websocket.server.WebSocketServerImpl;
 public class Test {
 
 	public static void main(String[] args) {
-		WebSocketServer server = WebSocketServerImpl.getInstance();
+		WebSocketServer server = new WebSocketServerImpl();
+		server.start();
 	}
 }

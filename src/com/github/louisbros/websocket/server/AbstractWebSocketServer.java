@@ -18,25 +18,23 @@ import com.github.louisbros.websocket.server.ProtocolUtils.Code;
 
 public abstract class AbstractWebSocketServer implements WebSocketServer{
 
-	private static final long serialVersionUID = 1L;
-	protected volatile static WebSocketServer server;
 	private transient Thread thread;
-	protected List<Peer> peers;
 	private int port = -1;
+	protected List<Peer> peers;
 	
 	public AbstractWebSocketServer(){
+		thread = new Thread(this);
 		peers = new ArrayList<Peer>();
 	}
 	
 	public void start(){
-		thread = new Thread(server);
-		thread.start();
+		if(!thread.isAlive()){
+			thread.start();
+		}
 	}
 	
 	public void stop(){
-		if(thread != null){
-			thread.interrupt();
-		}
+		thread.interrupt();
 	}
 	
 	public int getPort(){
@@ -55,7 +53,7 @@ public abstract class AbstractWebSocketServer implements WebSocketServer{
 			serverSocketChannel.configureBlocking( false );
 			ServerSocket socket = serverSocketChannel.socket();
 			socket.bind(new InetSocketAddress(0));
-			port = socket.getLocalPort();System.out.println(port);
+			port = socket.getLocalPort();
 			selector = Selector.open();
 			serverSocketChannel.register( selector, SelectionKey.OP_ACCEPT );
 			
