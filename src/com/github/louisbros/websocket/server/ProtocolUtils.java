@@ -116,10 +116,10 @@ public class ProtocolUtils {
 		return sb.toString();
 	}
 	
-	public static ByteBuffer encodeUnmaskedFrame(String message){
+	public static ByteBuffer encodeUnmaskedFrame(Code code, String message){
 		
 		List<Byte> frame = new ArrayList<Byte>();
-		frame.add((byte)Integer.parseInt("10000001", 2));
+		frame.add((byte)((short) code.getCode() | (1 << 7) & 0xff));
 		frame.add((byte)message.length());
 		for(int i = 0;i < message.length();i++){
 			frame.add((byte)message.charAt(i));

@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
+import com.github.louisbros.websocket.server.ProtocolUtils.Code;
+
 public class WebSocketServerImpl extends AbstractWebSocketServer{
 
 	@Override
@@ -15,7 +17,7 @@ public class WebSocketServerImpl extends AbstractWebSocketServer{
 		Map<String, String > jsonMap = new HashMap<String, String>();
 		jsonMap.put("peerSize", Integer.toString(peers.size()));
 		jsonMap.put("message", message);
-		ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame(new JSONObject(jsonMap).toString());
+		ByteBuffer buffer = ProtocolUtils.encodeUnmaskedFrame(Code.TEXT_MESSAGE, new JSONObject(jsonMap).toString());
 		buffer.flip();
 		
 		for(Peer peer : peers){
