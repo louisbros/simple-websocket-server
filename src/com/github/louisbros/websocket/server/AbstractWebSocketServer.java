@@ -89,8 +89,13 @@ public abstract class AbstractWebSocketServer implements WebSocketServer{
 						else{
 							String message = ProtocolUtils.decodeMaskedFrame(buffer);
 							if(message.equals(Code.CLOSE.name())){
-								peer.getChannel().close();
 								peers.remove(peer);
+								ByteBuffer closeBuffer = ProtocolUtils.encodeUnmaskedFrame(Code.CLOSE, "");
+								closeBuffer.flip();
+								while(closeBuffer.hasRemaining()){
+									peer.getChannel().write(closeBuffer);
+								}
+								peer.getChannel().close();
 								broadcast("peer disconnected");
 								continue;
 							}
@@ -124,7 +129,9 @@ public abstract class AbstractWebSocketServer implements WebSocketServer{
 			e.printStackTrace();
 		}
 		finally{
+			
 			try{
+				
 				if(serverSocketChannel != null ){
 					serverSocketChannel.close();
 				}
